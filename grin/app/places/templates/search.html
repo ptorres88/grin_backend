@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Simple Map</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+    <style>
+      #map {
+        height: 400px;
+        width: 400px;
+      }
+
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      .tab tr td{
+        border: 1px solid;
+        border-color: green;
+      }
+
+    </style>
+  </head>
+  <body>
+    <input id="pac-input" class="controls" type="text" placeholder="Search Box">
+    <input type="hidden" name="csrfmiddlewaretoken" value="iumtJFPz8hxhZwNeo1mefXefECeOjTCZnYzhhK8tZ6qEEKK4NSNoFola2EVGclSX" disabled="">
+    <div id="map"></div>
+    <button id="pin">Mark place</button>
+    <button ><a href="{% url 'home' %}" >Dashboard</a></button>
+    <br/>
+    <button id="places">Explorar lugares cercanos</button>
+    <input type="text" placeholder="palabra clave" id="query" />
+    <select id="sortKey">
+      <option value="popularity">Popularidad</option>
+      <option value="distance">Distancia</option>
+    </select>
+    <div>
+      <table id="pins" class="tab">
+        
+      </table>
+    </div>
+	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyABHZd7aur7b6x7RTWnDn35Lcpp9wZkSvE&callback=initMap&libraries=places"
+    async defer></script>
+  {% load staticfiles %}
+  <script type="text/javascript"  src="{% static 'controller.js' %}" ></script>
+  {% csrf_token %}
+    <script>
+      var map;
+      var lat_pos;
+      var lng_pos;
+      var marker;
+      var name;
+      const pin = document.getElementById('pin');
+      const places = document.getElementById('places');
+
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: 19.5, lng: -99.1},
+          zoom: 12,
+          mapTypeId: 'roadmap'
+        });
+
+        marker = new google.maps.Marker({
+            position: {lat: 19.5, lng: -99.1},
+            map: map,
+            draggable:true,
+            title:"Drag me!"
+        });
+
+        google.maps.event.addListener(marker, 'dragend', function (evt) {
+          lat_pos = evt.latLng.lat().toFixed(3);
+          lng_pos = evt.latLng.lng().toFixed(3);
+        });
+
+        var input = document.getElementById('pac-input');
+        var searchBox = new google.maps.places.SearchBox(input);
+        map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+
+        map.addListener('bounds_changed', function() {
+          searchBox.setBounds(map.getBounds());
+        });
+
+        // Listen for the event fired when the user selects a prediction and retrieve
+        searchBox.addListener('places_changed', function() {
+          var places = searchBox.getPlaces();
+
+          if (places.length == 0) {
+            return;
+          }
+
+          var bounds = new google.maps.LatLngBounds();
+          places.forEach(function(place) {
+            if (!place.geometry) {
+              console.log("Returned place contains no geometry");
+              return;
+            }
+
+            marker.setPosition(place.geometry.location);
+            name = place.name;
+
+            if (place.geometry.viewport) {
+              bounds.union(place.geometry.viewport);
+            } else {
+              bounds.extend(place.geometry.location);
+            }
+          });
+          map.fitBounds(bounds);
+        });
+      }
+      
+      const positions = (type) => {
+        return marker.getPosition()[type]()
+      }
+      
+      pin.addEventListener('click', (ev) => {
+          var data = {
+            lat: positions('lat'),
+            lng: positions('lng'),
+            name: name,
+            popularity: 1.0
+          }
+          //console.log(data);
+          sendData('http://localhost:8000/api/Place/','POST',data).then(res => {
+            console.log(res);
+        })
+      })
+
+      places.addEventListener('click', (ev) => {
+
+        sendData('http://localhost:8000/api/Place/','GET').then(res => {
+            var data = {
+              lat: res.data.pos[0],
+              lng: res.data.pos[1],
+              query: document.getElementById('query').value,
+              sortKey: document.getElementById('sortKey').value
+            }
+            console.log(params(data))
+            sendData('http://localhost:8000/api/Places/?'+params(data),'GET',data).then(res => {
+              console.log(res);
+              fillTable(res);
+            })
+        }) 
+      })
+
+      function fillTable(res){
+          size = res.data.length;
+          table = document.getElementById("pins")
+          table.innerHTML = '';
+            tr = document.createElement('tr');
+            
+            td = document.createElement('td');
+            td.innerText = 'nombre';
+            tr.appendChild(td);
+
+            td = document.createElement('td');
+            td.innerText = 'distancia';
+            tr.appendChild(td);
+
+            td = document.createElement('td');
+            td.innerText = 'popularidad';
+            tr.appendChild(td);
+            table.appendChild(tr);
+          
+          parser = new DOMParser()
+          for (i = 0; i != size; i++)
+          {
+
+            tr = document.createElement('tr');
+            td = document.createElement('td');
+            let name = res.data[i].name
+            td.innerText = name
+            tr.appendChild(td)
+            td = document.createElement('td');
+            let distance = res.data[i].distance
+            td.innerText = distance
+            tr.appendChild(td)
+            td = document.createElement('td');
+            let popularity = res.data[i].popularity
+            td.innerText = popularity
+            tr.appendChild(td)
+            let description = res.data[i].description
+            var button = document.createElement('button');
+            let lat = res.data[i].lat
+            let lng = res.data[i].lng
+            button.innerText = 'Agregar'
+            button.onclick = function(){console.log(name);
+              addPlace(name,popularity,distance,description,lat,lng);
+            }
+            td = document.createElement('td');
+            td.appendChild(button);
+            tr.appendChild(td)
+            table.appendChild(tr);
+          }
+      }
+
+      function addPlace(name,popularity,distance,description,lat,lng){
+        var data_ = {
+              name: name,
+              popularity: popularity,
+              distance: distance,
+              description: description,
+              lat:lat,
+              lng:lng
+        }
+        console.log(data_)
+        sendData('http://localhost:8000/api/Favourite/','POST',data_).then(res => {
+          console.log(res);
+          //window.location = '';
+        })
+      } 
+    </script>
+  </body>
+</html>

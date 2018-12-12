@@ -1,0 +1,64 @@
+{% load rest_framework %}
+<html>
+	<head>
+		{% load staticfiles %}
+		<link rel="stylesheet" media="all" href="{% static 'styles.css' %}">
+	</head>
+	<body>
+	{% block content %}
+	{% if user.is_authenticated %}
+	  Hola {{ user.username }}!
+	  <div>
+			<ul class="nav">
+				<li><a href="{% url 'place' %}" >Mi ubicación</a></li>
+				<li><a href="{% url 'near' %}">Lugares Favoritos</a></li>
+	  			<a id="logout" >logout</a>
+			</ul>
+		</div>
+	{% else %}
+	<div class="log-form">
+	  <h2>Login</h2>
+	  <form>
+	    <input id="username" type="text" title="username" placeholder="username" />
+	    <input id="password" type="password" title="username" placeholder="password" />
+	    <button id="login"  class="btn">Login</button>
+	    <a class="forgot" href="{% url 'new' %}">signup</a>
+	  </form>
+	</div>
+	
+	{% endif %}
+
+	{% load staticfiles %}
+  	<script type="text/javascript"  src="{% static 'controller.js' %}" ></script>
+
+	
+	{% if user.is_authenticated %}
+	<script type="text/javascript">
+	const logout = document.getElementById('logout');
+  
+    logout.addEventListener('click', (ev) => {
+    	ev.preventDefault()
+        sendData('http://localhost:8000/api/Logout/','GET').then(res => {
+          window.location = '';
+        })
+    })
+    </script>
+	{% else %}
+	<script type="text/javascript">
+	const element = document.getElementById('login')
+
+    element.addEventListener('click', (ev) => {
+    	ev.preventDefault()
+        const request_data = {
+          username: document.getElementById('username').value,
+          password: document.getElementById('password').value
+        }
+        sendData('http://localhost:8000/api/Login/','POST',request_data).then(res => {
+          window.location = '';
+        })
+    })
+    </script>
+	{% endif %}
+	{% endblock %}
+	</body>
+</html>

@@ -1,0 +1,7 @@
+export PORT=8000
+export DATABASE_NAME=d57ebm9u390elf
+export DATABASE_PORT=5432
+export DATABASE_HOST=ec2-23-21-188-236.compute-1.amazonaws.com
+export DATABASE_USER=tvmambtayyusoc
+export DATABASE_PASSWORD=a406febac114f26d5629ee92c2ac50415ab5423dfcb717384aa8d3b6fb2b8574
+export DATABASE_URI=postgres://tvmambtayyusoca406febac114f26d5629ee92c2ac50415ab5423dfcb717384aa8d3b6fb2b8574@ec-23-21-188-236.compute-1.amazonaws.com:5432/d57ebm9u390elf

@@ -1,0 +1,36 @@
+{% load rest_framework %}
+<html>
+	<head>
+		{% load staticfiles %}
+		<link rel="stylesheet" media="all" href="{% static 'styles.css' %}">
+	</head>
+	<body>
+	<div class="log-form">
+	  <h2>Registro de usuario</h2>
+	  <form>
+	    {% csrf_token %}
+	    <input id="username" type="text" title="username" placeholder="username" />
+	    <input id="password" type="password" title="username" placeholder="password" />
+	    <button id="signup"  class="btn">Submit</button>
+	  </form>
+	</div>
+
+	{% load staticfiles %}
+  	<script type="text/javascript"  src="{% static 'controller.js' %}" ></script>
+	<script type="text/javascript">
+	const element = document.getElementById('signup')
+
+    element.addEventListener('click', (ev) => {
+    	ev.preventDefault()
+        const request_data = {
+          username: document.getElementById('username').value,
+          password: document.getElementById('password').value
+        }
+        sendData('http://localhost:8000/api/User/','POST',request_data).then(res => {
+          window.location = 'http://localhost:8000/';
+        })
+    })
+    </script>
+
+	</body>
+</html>

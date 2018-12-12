@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Simple Map</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+    <style>
+      .tab tr td{
+        border: 1px solid;
+        border-color: green;
+      }
+    </style>
+  </head>
+  <body>
+    <table id="lista" class="tab">
+    </table>
+    <button><a href="{% url 'home' %}" >Dashboard</a></button>
+    <button id="prev">prev</button>
+    <button id="next">next</button>
+    <button id="recalcular">recalcular distancia</button>
+    <button id="distance">filtrar por distancia</button>
+    <button id="popularity">filtrar por popularidad</button>
+    {% load staticfiles %}
+    <script type="text/javascript"  src="{% static 'controller.js' %}" ></script>
+    <script>
+      const distance_btn = document.getElementById('distance')
+      const popularity_btn = document.getElementById('popularity')
+      const recalcular_btn = document.getElementById('recalcular')
+      var current_src = 'http://localhost:8000/api/Favourites/?';
+      
+      sendData('http://localhost:8000/api/Favourites/','GET').then(res => {
+          fill(res);
+      })
+      
+      function call_fill(param){
+        sendData(param).then(res => {
+          fill(res);
+
+        })
+      } 
+
+      function deletePlace(elemid){
+        console.log(elemid);
+        sendData('http://localhost:8000/api/Favourite/'+elemid+'/','PUT').then(res => {
+          console.log(res);
+          window.location = '';
+        })
+      }  
+
+      function fill(res){
+          dataset = res.results;
+          size = dataset.length;
+          table = document.getElementById("lista")
+          table.innerHTML = '';
+          parser = new DOMParser()
+
+          tr = document.createElement('tr');
+            
+          td = document.createElement('td');
+          td.innerText = 'nombre';
+          tr.appendChild(td);
+
+          td = document.createElement('td');
+          td.innerText = 'popularidad';
+          tr.appendChild(td);
+
+          td = document.createElement('td');
+          td.innerText = 'description';
+          tr.appendChild(td);
+
+          td = document.createElement('td');
+          td.innerText = 'distance';
+          tr.appendChild(td);
+
+
+          table.appendChild(tr);
+          for (i = 0; i != size; i++)
+          {
+            tr = document.createElement('tr');
+            td = document.createElement('td');
+            td.innerText = dataset[i].name
+            tr.appendChild(td)
+            td = document.createElement('td');
+            td.innerText = dataset[i].popularity
+            tr.appendChild(td)
+            td = document.createElement('td');
+            td.innerText = dataset[i].description
+            tr.appendChild(td)
+            td = document.createElement('td');
+            td.innerText = dataset[i].distance. toFixed(2);
+            tr.appendChild(td)
+            td = document.createElement('td');
+
+            button = document.createElement('button');
+            button.innerText = 'Eliminar'
+            let x = dataset[i].id
+            button.onclick = function(){deletePlace(x)};
+            td.appendChild(button);
+            tr.appendChild(td)
+            table.appendChild(tr);
+          }
+
+          prev = document.getElementById("prev")
+          prev.onclick = function() {
+            call_fill(res.previous);
+            current_src = res.previous;
+          };
+          next = document.getElementById("next")
+          next.onclick = function() {
+            current_src = res.next;
+            call_fill(res.next);
+          };
+      }
+
+      distance_btn.addEventListener('click', (ev) => {
+          sendData(current_src+'&sortKey=distance','GET').then(res => {
+            console.log(res);
+            fill(res);
+          })
+      })
+
+      popularity_btn.addEventListener('click', (ev) => {
+          sendData(current_src+'&sortKey=popularity','GET').then(res => {
+            console.log(res);
+            fill(res);
+          })
+      })
+
+      recalcular_btn.addEventListener('click', (ev) => {
+          sendData('http://localhost:8000/api/DistancePlaceFavourite/','PUT');
+          
+          sendData('http://localhost:8000/api/Favourites/?','GET').then(res => {
+            console.log(res);
+            fill(res);
+          })
+      })
+
+    </script>
+  </body>
+</html>
